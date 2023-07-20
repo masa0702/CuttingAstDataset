@@ -20,6 +20,9 @@ def compileabe_code(code):
         print("False")
         return False
 
+def dist2cosSim(distance:int) -> float:
+    return 1/(1+distance)
+
 def create_data(save_directory_path, file_name, source_code, target_code, delete_node_count):
     jsonl_path = os.path.join(save_directory_path, f"{file_name}.jsonl")
     
@@ -31,11 +34,17 @@ def create_data(save_directory_path, file_name, source_code, target_code, delete
     
     source_line = source_code.split("\n")
     target_line = target_code.split("\n")
+    leven_dist_line = 0
     for line_a, line_b in zip(source_line, target_line):
         line_distance = Levenshtein.distance(line_a, line_b)
         leven_dist_line += line_distance
-        
-    data = {
+    
+    cos_sim_char = dist2cosSim(leven_dist_char)
+    cos_sim_line = dist2cosSim(leven_dist_line)
+    cos_sim_nodedel = dist2cosSim(delete_node_count)
+    
+    pair_data = []
+    pair = {
         "index": "Delete_{delete_node_count}",
         "sourceFilename": file_name,
         "targetFilename": file_name,
@@ -43,10 +52,23 @@ def create_data(save_directory_path, file_name, source_code, target_code, delete
         "target": target_code,
         "sourceSizeChar": source_char_length,
         "targetSizeChar": target_char_length,
+        "sourceSizeLine": source_line_length,
+        "targetSizeLine": target_line_length,
         "levenDistChar": leven_dist_char,
         "levenDistLine": leven_dist_line,
-        "deleteNodeCount": delete_node_count
+        "deleteNodeCount": delete_node_count,
+        "cosSimChar": cos_sim_char,
+        "cosSimLine": cos_sim_line,
+        "cosSimNodeDel": cos_sim_nodedel
     }
+    
+    pair_data.append(pair)
+    
+    with open(jsonl_path, "w") as f:
+        for pair in pair_data:
+            f.write(str(pair)+"\n")
+    f.close()
+    
     
     
 
