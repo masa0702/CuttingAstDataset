@@ -3,3 +3,9 @@ def max(a, b):
         return a
     else:
         return b
+    
+    while True:
+        pass
+    
+    for i in range(10):
+        pass

@@ -142,7 +142,7 @@ def main(filename):
     # random2del
     random_jsonLines = []
     random_len = int(len(random_allNodeList)//2)
-    for random_num in range(random_len):
+    for random_num in range(len(random_allNodeList)):
         random_node = random.choice(random_allNodeList)
         deleteCount = random_deleteNodeCount[random_allNodeList.index(random_node)]
         random_dumplicatedTree = deepcopy(tree)
@@ -153,6 +153,6 @@ def main(filename):
         
         print("random_delete_node : ",deleteCount)
         create_data(random_json_path, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
-    
+        random_allNodeList.remove(random_node)
 if __name__ == "__main__":
     main("test.py")
