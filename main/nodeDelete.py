@@ -2,8 +2,10 @@ import logging
 import ast
 import os
 import json
+import random
 import Levenshtein
 from os import path
+import pandas as pd
 from copy import deepcopy
 from astars import AParser, AstAnalyser, AstOperator, ACodeGenerator
 from anytree import RenderTree
@@ -19,67 +21,74 @@ def compileable_code(code):
         return True
     except SyntaxError:
         print("False")
+        pass
         return False
 
 def dist2cosSim(distance:int) -> float:
     return 1/(1+distance)
 
-def create_data(save_directory_path, file_name, source_code, target_code, delete_node_count):
-    jsonl_path = os.path.join(save_directory_path, f"{file_name}.jsonl")
-    
-    source_char_length = len(source_code)
-    target_char_length = len(target_code)
-    source_line_length = len(source_code.split("\n"))
-    target_line_length = len(target_code.split("\n"))
-    leven_dist_char = Levenshtein.distance(source_code, target_code)
-    
-    source_line = source_code.split("\n")
-    target_line = target_code.split("\n")
-    leven_dist_line = 0
-    for line_a, line_b in zip(source_line, target_line):
-        line_distance = Levenshtein.distance(line_a, line_b)
-        leven_dist_line += line_distance
-    
-    cos_sim_char = dist2cosSim(leven_dist_char)
-    cos_sim_line = dist2cosSim(leven_dist_line)
-    cos_sim_nodedel = dist2cosSim(delete_node_count)
-    
-    pair_data = []
-    pair = {
-        "index": f"Delete_{delete_node_count}",
-        "sourceFilename": file_name,
-        "targetFilename": file_name,
-        "source": source_code,
-        "target": target_code,
-        "sourceSizeChar": source_char_length,
-        "targetSizeChar": target_char_length,
-        "sourceSizeLine": source_line_length,
-        "targetSizeLine": target_line_length,
-        "levenDistChar": leven_dist_char,
-        "levenDistLine": leven_dist_line,
-        "deleteNodeCount": delete_node_count,
-        "cosSimChar": cos_sim_char,
-        "cosSimLine": cos_sim_line,
-        "cosSimNodeDel": cos_sim_nodedel
-    }
-    
-    pair_data.append(pair)
-    
-    with open(jsonl_path, "w") as f:
-        for pair in pair_data:
-            f.write(json.dumps(pair) + "\n")
-    f.close()
-    
-def  save_to_json_file(data, filename):
-    with open(filename, "w") as file:
-        json.dump(data, file)
+def create_data(save_jsonl_path, file_name, source_code, target_code, delete_node_count, jsonLines, jsonlDict):
+    if compileable_code(target_code):
+
+        source_char_length = len(source_code)
+        target_char_length = len(target_code)
+        source_line_length = len(source_code.split("\n"))
+        target_line_length = len(target_code.split("\n"))
+        leven_dist_char = Levenshtein.distance(source_code, target_code)
         
-def clear_jsonl_file(filename):
-    with open(filename, "w") as file:
+        source_line = source_code.split("\n")
+        target_line = target_code.split("\n")
+        leven_dist_line = 0
+        for line_a, line_b in zip(source_line, target_line):
+            line_distance = Levenshtein.distance(line_a, line_b)
+            leven_dist_line += line_distance
+        
+        cos_sim_char = dist2cosSim(leven_dist_char)
+        cos_sim_line = dist2cosSim(leven_dist_line)
+        cos_sim_nodedel = dist2cosSim(delete_node_count)
+        
+        jsonlDict["index"] = f"Delete_{delete_node_count}"
+        jsonlDict["sourceFilename"] = file_name
+        jsonlDict["targetFilename"] = file_name
+        jsonlDict["source"] = source_code
+        jsonlDict["target"] = target_code   
+        jsonlDict["sourceSizeChar"] = source_char_length
+        jsonlDict["targetSizeChar"] = target_char_length
+        jsonlDict["sourceSizeLine"] = source_line_length
+        jsonlDict["targetSizeLine"] = target_line_length
+        jsonlDict["levenDistChar"] = leven_dist_char
+        jsonlDict["levenDistLine"] = leven_dist_line
+        jsonlDict["deleteNodeCount"] = delete_node_count
+        jsonlDict["cosSimChar"] = cos_sim_char
+        jsonlDict["cosSimLine"] = cos_sim_line
+        jsonlDict["cosSimNodeDel"] = cos_sim_nodedel
+            
+        jsonLines.append(jsonlDict)
+        
+    else:
+        pass 
+        
+    df = pd.DataFrame(jsonLines)
+    df.to_json(save_jsonl_path, orient="records", lines=True)
+    
+def save_data_to_jsonl(data, file_path):
+    if os.path.exists(file_path):
+        with open(file_path, 'a') as f:
+            f.write(data + '\n')
+    else:
+        with open(file_path, 'w') as f:
+            f.write(data + '\n')
+        
+def clear_jsonl_file(file_path):
+    with open(file_path, "w") as file:
         file.write("")
 
+def delete_node_count(allNodeList):
+        deleteNodeCount = [len(count.descendants)+1 for count in allNodeList]
+        return deleteNodeCount
+    
 def main(filename):
-    with open(path.join(path.dirname(__file__), "input", filename + ".py")) as f:
+    with open(path.join(path.dirname(__file__), "input", filename)) as f:
         code = f.read()
     
     compileable_code(code)
@@ -91,24 +100,59 @@ def main(filename):
     generator = ACodeGenerator()
     logging.info(generator.generate(root=tree))
     
-    dumplicatedTree = deepcopy(tree)
-    allNodeList = AstAnalyser.allNodes(dumplicatedTree, "post", True)
+    front_dumplicatedTree = deepcopy(tree)
+    back_dumplicatedTree = deepcopy(tree)
+    random_dumplicatedTree = deepcopy(tree)
     
-    temp_json_path = "main/save_jsonl"
-    delete_node_count = 0
+    front_allNodeList = AstAnalyser.allNodes(front_dumplicatedTree, "post", False)
+    back_allNodeList = AstAnalyser.allNodes(back_dumplicatedTree, "post", True)
+    random_allNodeList = AstAnalyser.allNodes(random_dumplicatedTree, "post", False)
+    print("------")
+    print(random_allNodeList)
+    front_deleteNodeCount = delete_node_count(front_allNodeList)
+    back_deleteNodeCount = delete_node_count(back_allNodeList)
+    random_deleteNodeCount = delete_node_count(random_allNodeList)
     
-    for subtree in allNodeList:
-        editedTree = operator.delete(root=dumplicatedTree, target=subtree)
-        # logging.info(generator.generate(root=editedTree))
+    front_json_path = f"main/dataset/frontSeqDel/front_del_{filename}.jsonl"
+    back_json_path = f"main/dataset/backSeqDel/back_del_{filename}.jsonl"
+    random_json_path = f"main/dataset/randomDel/random_del_{filename}.jsonl"
+    
+    # front2del
+    front_jsonLines = []
+    for subtree, deleteCount in zip(front_allNodeList, front_deleteNodeCount):
+        jsonlDict = {}
+        
+        editedTree = operator.delete(root=front_dumplicatedTree, target=subtree)
         restored_code = generator.generate(root=editedTree)
-        delete_node_count += 1
-        print("delete_node : ",delete_node_count)
-        if compileable_code(restored_code):
-            
-        else:
-            pass         
-        create_data(save_directory_path, filename, code, restored_code, delete_node_count)
-        print("add data")
-
+        
+        print("front_delete_node : ",deleteCount)
+        create_data(front_json_path, filename, code, restored_code, deleteCount, front_jsonLines, jsonlDict)
+        
+    # back2del
+    back_jsonLines = []
+    for subtree, deleteCount in zip(back_allNodeList, back_deleteNodeCount):
+        jsonlDict = {}
+        
+        editedTree = operator.delete(root=back_dumplicatedTree, target=subtree)
+        restored_code = generator.generate(root=editedTree)
+        
+        print("back_delete_node : ",deleteCount)
+        create_data(back_json_path, filename, code, restored_code, deleteCount, back_jsonLines, jsonlDict)
+        
+    # random2del
+    random_jsonLines = []
+    random_len = int(len(random_allNodeList)//2)
+    for random_num in range(random_len):
+        random_node = random.choice(random_allNodeList)
+        deleteCount = random_deleteNodeCount[random_allNodeList.index(random_node)]
+        random_dumplicatedTree = deepcopy(tree)
+        print("++++++++++++")
+        print(random_node)
+        editedTree = operator.delete(root=random_dumplicatedTree, target=random_node)
+        restored_code = generator.generate(root=editedTree)
+        
+        print("random_delete_node : ",deleteCount)
+        create_data(random_json_path, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
+    
 if __name__ == "__main__":
-    main("test")
+    main("test.py")

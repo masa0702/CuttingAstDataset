@@ -5,6 +5,9 @@ original repository is [astar](https://github.com/xwasoux/astars).
 
 you must run this command when you use it for the first time
 ```
-cd astar
-source addSubmodules.sh 
+$cd astar
+$source addSubmodules.sh 
+
+$cd ../
+$pip install -e .
 ```

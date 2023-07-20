@@ -43,5 +43,10 @@ class AParser:
 
     def _splitText(self, text:str) -> list:
         lineText = text.splitlines()
-        textList = [list(splitStr)+["\n"] for splitStr in lineText]
+        textList = []
+        for splitLine in lineText:
+            if splitLine == lineText[-1]:
+                textList.append(list(splitLine))
+            else:
+                textList.append(list(splitLine)+["\n"])
         return textList
