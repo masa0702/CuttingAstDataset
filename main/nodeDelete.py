@@ -48,8 +48,7 @@ def create_data(save_jsonl_path, file_name, source_code, target_code, delete_nod
         cos_sim_nodedel = dist2cosSim(delete_node_count)
         
         jsonlDict["index"] = f"Delete_{delete_node_count}"
-        jsonlDict["sourceFilename"] = file_name
-        jsonlDict["targetFilename"] = file_name
+        jsonlDict["Filename"] = file_name
         jsonlDict["source"] = source_code
         jsonlDict["target"] = target_code   
         jsonlDict["sourceSizeChar"] = source_char_length
@@ -125,7 +124,6 @@ def main(filename):
         editedTree = operator.delete(root=front_dumplicatedTree, target=subtree)
         restored_code = generator.generate(root=editedTree)
         
-        print("front_delete_node : ",deleteCount)
         create_data(front_json_path, filename, code, restored_code, deleteCount, front_jsonLines, jsonlDict)
         
     # back2del
@@ -136,7 +134,6 @@ def main(filename):
         editedTree = operator.delete(root=back_dumplicatedTree, target=subtree)
         restored_code = generator.generate(root=editedTree)
         
-        print("back_delete_node : ",deleteCount)
         create_data(back_json_path, filename, code, restored_code, deleteCount, back_jsonLines, jsonlDict)
         
     # random2del
@@ -154,6 +151,7 @@ def main(filename):
         restored_code = generator.generate(root=editedTree)
 
         print("random_delete_node : ", deleteCount)
+        
         if random_node.type in ['if', 'for', 'while']:
             create_data(random_json_path_special, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
         else:
