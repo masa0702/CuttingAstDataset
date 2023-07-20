@@ -1,6 +1,7 @@
 import logging
 import ast
 import os
+import json
 import Levenshtein
 from os import path
 from copy import deepcopy
@@ -11,7 +12,7 @@ logging.basicConfig(format='%(asctime)s -\n %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S', 
                     level=logging.INFO)
 
-def compileabe_code(code):
+def compileable_code(code):
     try:
         ast.parse(code)
         print("True")
@@ -45,7 +46,7 @@ def create_data(save_directory_path, file_name, source_code, target_code, delete
     
     pair_data = []
     pair = {
-        "index": "Delete_{delete_node_count}",
+        "index": f"Delete_{delete_node_count}",
         "sourceFilename": file_name,
         "targetFilename": file_name,
         "source": source_code,
@@ -66,17 +67,22 @@ def create_data(save_directory_path, file_name, source_code, target_code, delete
     
     with open(jsonl_path, "w") as f:
         for pair in pair_data:
-            f.write(str(pair)+"\n")
+            f.write(json.dumps(pair) + "\n")
     f.close()
     
-    
-    
+def  save_to_json_file(data, filename):
+    with open(filename, "w") as file:
+        json.dump(data, file)
+        
+def clear_jsonl_file(filename):
+    with open(filename, "w") as file:
+        file.write("")
 
-def main():
-    with open(path.join(path.dirname(__file__), "input", "test.py")) as f:
+def main(filename):
+    with open(path.join(path.dirname(__file__), "input", filename + ".py")) as f:
         code = f.read()
     
-    compileabe_code(code)
+    compileable_code(code)
     parser = AParser()
     tree = parser.parse(text=code, lang="python")
     logging.info(RenderTree(tree).by_attr("type"))
@@ -88,13 +94,21 @@ def main():
     dumplicatedTree = deepcopy(tree)
     allNodeList = AstAnalyser.allNodes(dumplicatedTree, "post", True)
     
+    temp_json_path = "main/save_jsonl"
+    delete_node_count = 0
+    
     for subtree in allNodeList:
         editedTree = operator.delete(root=dumplicatedTree, target=subtree)
         # logging.info(generator.generate(root=editedTree))
         restored_code = generator.generate(root=editedTree)
-        
-        if compileabe_code(restored_code):
-            pass           
+        delete_node_count += 1
+        print("delete_node : ",delete_node_count)
+        if compileable_code(restored_code):
+            
+        else:
+            pass         
+        create_data(save_directory_path, filename, code, restored_code, delete_node_count)
+        print("add data")
 
 if __name__ == "__main__":
-    main()
+    main("test")
