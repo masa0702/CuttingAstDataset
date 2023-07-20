@@ -107,8 +107,7 @@ def main(filename):
     front_allNodeList = AstAnalyser.allNodes(front_dumplicatedTree, "post", False)
     back_allNodeList = AstAnalyser.allNodes(back_dumplicatedTree, "post", True)
     random_allNodeList = AstAnalyser.allNodes(random_dumplicatedTree, "post", False)
-    print("------")
-    print(random_allNodeList)
+    
     front_deleteNodeCount = delete_node_count(front_allNodeList)
     back_deleteNodeCount = delete_node_count(back_allNodeList)
     random_deleteNodeCount = delete_node_count(random_allNodeList)
@@ -116,6 +115,7 @@ def main(filename):
     front_json_path = f"main/dataset/frontSeqDel/front_del_{filename}.jsonl"
     back_json_path = f"main/dataset/backSeqDel/back_del_{filename}.jsonl"
     random_json_path = f"main/dataset/randomDel/random_del_{filename}.jsonl"
+    random_json_path_special = f"main/dataset/randomSpeDel/random_del_special_{filename}.jsonl"
     
     # front2del
     front_jsonLines = []
@@ -141,18 +141,24 @@ def main(filename):
         
     # random2del
     random_jsonLines = []
-    random_len = int(len(random_allNodeList)//2)
-    for random_num in range(len(random_allNodeList)):
-        random_node = random.choice(random_allNodeList)
+    sqcial_jsonLines = []
+    random_len = int(len(random_allNodeList))
+    random_node_list = list(random_allNodeList)
+
+    for subtree, deleteCount in zip(back_allNodeList, random_deleteNodeCount):
+        random_node = random.choice(random_node_list)
         deleteCount = random_deleteNodeCount[random_allNodeList.index(random_node)]
         random_dumplicatedTree = deepcopy(tree)
-        print("++++++++++++")
-        print(random_node)
+        jsonlDict = {}
         editedTree = operator.delete(root=random_dumplicatedTree, target=random_node)
         restored_code = generator.generate(root=editedTree)
-        
-        print("random_delete_node : ",deleteCount)
-        create_data(random_json_path, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
-        random_allNodeList.remove(random_node)
+
+        print("random_delete_node : ", deleteCount)
+        if random_node.type in ['if', 'for', 'while']:
+            create_data(random_json_path_special, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
+        else:
+            create_data(random_json_path, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
+    
+    random_node_list.remove(random_node)  # 選択された要素をrandom_node_listから削除
 if __name__ == "__main__":
     main("test.py")
