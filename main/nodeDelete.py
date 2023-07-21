@@ -158,5 +158,13 @@ def main(filename):
             create_data(random_json_path, filename, code, restored_code, deleteCount, random_jsonLines, jsonlDict)
     
     random_node_list.remove(random_node)  # 選択された要素をrandom_node_listから削除
+    
 if __name__ == "__main__":
-    main("test.py")
+    code_list = ["main/shapeData/test.jsonl", "main/shapeData/train.jsonl", "main/shapeData/valid.jsonl"]
+    for code in code_list:
+        with open(code, "r") as f:
+            for line in f:
+                data = json.loads(line)
+                filename = data["file_path"]
+                py_code = data["code"]
+                main(py_code)
