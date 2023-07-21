@@ -86,9 +86,9 @@ def delete_node_count(allNodeList):
         deleteNodeCount = [len(count.descendants)+1 for count in allNodeList]
         return deleteNodeCount
     
-def main(filename):
-    with open(path.join(path.dirname(__file__), "input", filename)) as f:
-        code = f.read()
+def main(filename, code, filename_without_extension):
+    # with open(path.join(path.dirname(__file__), "input", filename)) as f:
+    #     code = f.read()
     
     compileable_code(code)
     parser = AParser()
@@ -111,10 +111,10 @@ def main(filename):
     back_deleteNodeCount = delete_node_count(back_allNodeList)
     random_deleteNodeCount = delete_node_count(random_allNodeList)
     
-    front_json_path = f"main/dataset/frontSeqDel/front_del_{filename}.jsonl"
-    back_json_path = f"main/dataset/backSeqDel/back_del_{filename}.jsonl"
-    random_json_path = f"main/dataset/randomDel/random_del_{filename}.jsonl"
-    random_json_path_special = f"main/dataset/randomSpeDel/random_del_special_{filename}.jsonl"
+    front_json_path = f"main/astcutting/{filename_without_extension}/backSeqDel/front_del_{filename}.jsonl"
+    back_json_path = f"main/astcutting/{filename_without_extension}/backSeqDel/back_del_{filename}.jsonl"
+    random_json_path = f"main/astcutting/{filename_without_extension}/backSeqDel/random_del_{filename}.jsonl"
+    random_json_path_special = f"main/astcutting/{filename_without_extension}/backSeqDel/random_del_special_{filename}.jsonl"
     
     # front2del
     front_jsonLines = []
@@ -162,9 +162,11 @@ def main(filename):
 if __name__ == "__main__":
     code_list = ["main/shapeData/test.jsonl", "main/shapeData/train.jsonl", "main/shapeData/valid.jsonl"]
     for code in code_list:
+        filename_with_extension = os.path.basename(code)
+        filename_without_extension = os.path.splitext(filename_with_extension)[0]   
         with open(code, "r") as f:
             for line in f:
                 data = json.loads(line)
                 filename = data["file_path"]
                 py_code = data["code"]
-                main(py_code)
+                main(filename, py_code, filename_without_extension)
